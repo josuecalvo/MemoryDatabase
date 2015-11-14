@@ -35,5 +35,18 @@ namespace JosueCalvo.Toolkit.MemoryStructures.Tests
             Assert.AreEqual(1, values.Count);
             Assert.AreEqual("value5", values[0]);
         }
+
+        [Test]
+        public void Can_get_sorted_elements_from_index()
+        {
+            var index = new Index<string>(" .01234567890abcdefghijklmnopqrstuvwxyz");
+            index.AddKey("4", "value4");
+            index.AddKey("5", "value5");
+            index.AddKey("1", "value1");
+            index.AddKey("2", "value2");
+            index.AddKey("3", "value3");
+
+            var values = index.GetAll();
+        }
     }
 }

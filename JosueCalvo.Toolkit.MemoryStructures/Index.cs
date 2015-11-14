@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
 
 namespace JosueCalvo.Toolkit.MemoryStructures
 {
@@ -131,6 +130,29 @@ namespace JosueCalvo.Toolkit.MemoryStructures
                     {
                         output = keyValuesPair.Value;
                         break;
+                    }
+                }
+            }
+
+            return output;
+        }
+
+        public List<KeyValuePair<string, T>> GetAll(int page = 0)
+        {
+            var output = new List<KeyValuePair<string, T>>();
+
+            foreach (var pointer in _pages[page])
+            {
+                if (pointer > 0)
+                {
+                    output.AddRange(GetAll(pointer));
+                }
+                else if (pointer < 0)
+                {
+                    var keyValuesPair = _keys[(pointer * -1) - 1];
+                    foreach (var value in keyValuesPair.Value)
+                    {
+                        output.Add(new KeyValuePair<string, T>(keyValuesPair.Key, value));
                     }
                 }
             }
