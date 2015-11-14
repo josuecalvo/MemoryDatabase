@@ -1,49 +1,50 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 
 namespace JosueCalvo.Toolkit.MemoryStructures
 {
     public class Index<T> : IEnumerable<KeyValuePair<string, T>>
     {
-        const char KeyFinisher = '\n';
-
         List<int[]> _pages = new List<int[]>();
-        List<KeyValuePair<string, List<T>>> _keys = new List<KeyValuePair<string, List<T>>>();
+        List<KeyValuePair<string, List<KeyValuePair<string, T>>>> _keys = new List<KeyValuePair<string, List<KeyValuePair<string, T>>>>();
 
-        public string Characters { get; private set; }
+        public CharSet CharSet { get; private set; }
 
         public int Count { get { return _keys.Count; } }
 
-        public Index(string characters)
+        public Index(CharSet charSet)
         {
-            Characters = KeyFinisher + characters;
-            _pages.Add(new int[characters.Length]);
+            CharSet = charSet;
+            _pages.Add(new int[CharSet.CharacterSortOrder.Length]);
         }
 
         public void AddKey(string key, T value)
         {
+            var sortingKey = GetSortingKey(key);
             lock (_pages)
             {
-                var values = AddKeyToPages(key);
-                values.Add(value);
+                var values = AddKeyToPages(sortingKey);
+                values.Add(new KeyValuePair<string, T>(key, value));
             }
         }
 
-        List<T> AddKeyToPages(string key)
+        List<KeyValuePair<string, T>> AddKeyToPages(string key)
         {
-            List<T> output = null;
+            List<KeyValuePair<string, T>> output = null;
 
-            var pageKey = key + KeyFinisher;
+            var pageKey = key + CharSet.KeyFinisher;
             var page = 0;
             for (var i = 0; i < pageKey.Length; i++)
             {
-                var pagePosition = Characters.IndexOf(pageKey.Substring(i, 1));
+                var pagePosition = GetPagePosition(pageKey.Substring(i, 1));
 
                 if (_pages[page][pagePosition] == 0)
                 {
-                    output = new List<T>();
-                    _keys.Add(new KeyValuePair<string, List<T>>(key, output));
+                    output = new List<KeyValuePair<string, T>>();
+                    _keys.Add(new KeyValuePair<string, List<KeyValuePair<string, T>>>(key, output));
                     _pages[page][pagePosition] = _keys.Count * -1;
                     break;
                 }
@@ -70,15 +71,15 @@ namespace JosueCalvo.Toolkit.MemoryStructures
             return output;
         }
 
-        List<T> BranchKey(string key, int startingCharNumber, string foundKey, int foundPointer, int page)
+        List<KeyValuePair<string, T>> BranchKey(string key, int startingCharNumber, string foundKey, int foundPointer, int page)
         {
-            var output = new List<T>();
+            var output = new List<KeyValuePair<string, T>>();
 
-            var pageKey = key + KeyFinisher;
-            var foundPageKey = foundKey + KeyFinisher;
+            var pageKey = key + CharSet.KeyFinisher;
+            var foundPageKey = foundKey + CharSet.KeyFinisher;
 
-            var pagePosition = Characters.IndexOf(pageKey.Substring(startingCharNumber, 1));
-            _pages.Add(new int[Characters.Length]);
+            var pagePosition = GetPagePosition(pageKey.Substring(startingCharNumber, 1));
+            _pages.Add(new int[CharSet.CharacterSortOrder.Length]);
             _pages[page][pagePosition] = _pages.Count - 1;
             page = _pages.Count - 1;
 
@@ -87,18 +88,18 @@ namespace JosueCalvo.Toolkit.MemoryStructures
             {
                 if (foundPageKey.Length >= i && foundPageKey.Substring(i, 1) == pageKey.Substring(i, 1))
                 {
-                    pagePosition = Characters.IndexOf(pageKey.Substring(i, 1));
-                    _pages.Add(new int[Characters.Length]);
+                    pagePosition = GetPagePosition(pageKey.Substring(i, 1));
+                    _pages.Add(new int[CharSet.CharacterSortOrder.Length]);
                     _pages[page][pagePosition] = _pages.Count - 1;
                     page = _pages.Count - 1;
                 }
                 else
                 {
-                    pagePosition = Characters.IndexOf(pageKey.Substring(i, 1));
-                    _keys.Add(new KeyValuePair<string, List<T>>(key, output));
+                    pagePosition = GetPagePosition(pageKey.Substring(i, 1));
+                    _keys.Add(new  KeyValuePair<string, List<KeyValuePair<string, T>>>(key, output));
                     _pages[page][pagePosition] = _keys.Count * -1;
 
-                    pagePosition = Characters.IndexOf(foundPageKey.Substring(i, 1));
+                    pagePosition = GetPagePosition(foundPageKey.Substring(i, 1));
                     _pages[page][pagePosition] = foundPointer;
                     break;
                 }
@@ -107,15 +108,15 @@ namespace JosueCalvo.Toolkit.MemoryStructures
             return output;
         }
 
-        public List<T> GetValues(string key)
+        public List<KeyValuePair<string, T>> GetValues(string key)
         {
-            List<T> output = null;
+            List<KeyValuePair<string, T>> output = null;
 
-            var pageKey = key + KeyFinisher;
+            var pageKey = key + CharSet.KeyFinisher;
             var page = 0;
             for (var i = 0; i < pageKey.Length; i++)
             {
-                var pagePosition = Characters.IndexOf(pageKey.Substring(i, 1));
+                var pagePosition = GetPagePosition(pageKey.Substring(i, 1));
 
                 if (_pages[page][pagePosition] == 0)
                 {
@@ -154,7 +155,7 @@ namespace JosueCalvo.Toolkit.MemoryStructures
                     var keyValuesPair = _keys[(pointer * -1) - 1];
                     foreach (var value in keyValuesPair.Value)
                     {
-                        output.Add(new KeyValuePair<string, T>(keyValuesPair.Key, value));
+                        output.Add(new KeyValuePair<string, T>(value.Key, value.Value));
                     }
                 }
             }
@@ -183,32 +184,62 @@ namespace JosueCalvo.Toolkit.MemoryStructures
                     var keyValuesPair = _keys[(pointer * -1) - 1];
                     foreach (var value in keyValuesPair.Value)
                     {
-                        yield return new KeyValuePair<string, T>(keyValuesPair.Key, value);
+                        yield return new KeyValuePair<string, T>(value.Key, value.Value);
                     }
                 }
             }
         }
 
-        public IEnumerator<KeyValuePair<string, T>> GetRange(string start, string end)
+        int GetPagePosition(string keyCharString)
         {
-            foreach (var pointer in _pages[0])
+            var keyChar = keyCharString[0];
+
+            if (CharSet.CharConvertion.Any())
             {
-                if (pointer > 0)
+                char foundKeyChar;
+                if (CharSet.CharConvertion.TryGetValue(keyChar, out foundKeyChar))
                 {
-                    foreach (var value in GetAll(pointer))
-                    {
-                        yield return value;
-                    }
-                }
-                else if (pointer < 0)
-                {
-                    var keyValuesPair = _keys[(pointer * -1) - 1];
-                    foreach (var value in keyValuesPair.Value)
-                    {
-                        yield return new KeyValuePair<string, T>(keyValuesPair.Key, value);
-                    }
+                    keyChar = foundKeyChar;
                 }
             }
+
+            var output = CharSet.CharacterSortOrder.IndexOf(keyChar);
+
+            if (output == -1)
+            {
+                output = CharSet.CharacterSortOrder.IndexOf(CharSet.UnknownChar);
+            }
+
+            return output;
         }
+
+        string GetSortingKey(string key)
+        {
+            key = key.ToLower();
+            if (!CharSet.CharConvertion.Any())
+            {
+                return key;
+            }
+            else
+            {
+                var sortingKey = new StringBuilder();
+
+                foreach (char keyChar in key)
+                {
+                    char foundKeyChar;
+                    if (CharSet.CharConvertion.TryGetValue(keyChar, out foundKeyChar))
+                    {
+                        sortingKey.Append(foundKeyChar);
+                    }
+                    else
+                    {
+                        sortingKey.Append(keyChar);
+                    }
+                }
+
+                return sortingKey.ToString();
+            }
+        }
+
     }
 }
