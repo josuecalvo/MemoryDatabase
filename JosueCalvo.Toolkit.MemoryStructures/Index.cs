@@ -15,7 +15,7 @@ namespace JosueCalvo.Toolkit.MemoryStructures
 
         public Index(string characters)
         {
-            Characters = characters + KeyFinisher;
+            Characters = KeyFinisher + characters;
             _pages.Add(new int[characters.Length]);
         }
 
