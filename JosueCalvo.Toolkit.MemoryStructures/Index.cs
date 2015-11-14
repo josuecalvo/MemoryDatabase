@@ -1,8 +1,10 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 
 namespace JosueCalvo.Toolkit.MemoryStructures
 {
-    public class Index<T>
+    public class Index<T> : IEnumerable<KeyValuePair<string, T>>
     {
         const char KeyFinisher = '\n';
 
@@ -158,6 +160,55 @@ namespace JosueCalvo.Toolkit.MemoryStructures
             }
 
             return output;
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            throw new NotImplementedException();
+        }
+
+        public IEnumerator<KeyValuePair<string, T>> GetEnumerator()
+        {
+            foreach (var pointer in _pages[0])
+            {
+                if (pointer > 0)
+                {
+                    foreach (var value in GetAll(pointer))
+                    {
+                        yield return value;
+                    }
+                }
+                else if (pointer < 0)
+                {
+                    var keyValuesPair = _keys[(pointer * -1) - 1];
+                    foreach (var value in keyValuesPair.Value)
+                    {
+                        yield return new KeyValuePair<string, T>(keyValuesPair.Key, value);
+                    }
+                }
+            }
+        }
+
+        public IEnumerator<KeyValuePair<string, T>> GetRange(string start, string end)
+        {
+            foreach (var pointer in _pages[0])
+            {
+                if (pointer > 0)
+                {
+                    foreach (var value in GetAll(pointer))
+                    {
+                        yield return value;
+                    }
+                }
+                else if (pointer < 0)
+                {
+                    var keyValuesPair = _keys[(pointer * -1) - 1];
+                    foreach (var value in keyValuesPair.Value)
+                    {
+                        yield return new KeyValuePair<string, T>(keyValuesPair.Key, value);
+                    }
+                }
+            }
         }
     }
 }

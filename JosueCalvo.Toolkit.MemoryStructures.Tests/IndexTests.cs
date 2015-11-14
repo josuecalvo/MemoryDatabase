@@ -1,4 +1,5 @@
 ﻿using NUnit.Framework;
+using System.Collections.Generic;
 
 namespace JosueCalvo.Toolkit.MemoryStructures.Tests
 {
@@ -47,6 +48,13 @@ namespace JosueCalvo.Toolkit.MemoryStructures.Tests
             index.AddKey("3", "value3");
 
             var values = index.GetAll();
+
+            var lastKey = string.Empty;
+            foreach (var keyValuePair in index)
+            {
+                Assert.GreaterOrEqual(keyValuePair.Key, lastKey);
+                lastKey = keyValuePair.Key;
+            }
         }
     }
 }

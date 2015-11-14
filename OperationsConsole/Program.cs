@@ -24,7 +24,11 @@ namespace OperationsConsole
             }
             Console.WriteLine($"Inserted in {chronos.ElapsedMilliseconds}");
 
-            var all = index.GetAll();
+            //var all = index.GetAll();
+            foreach (var value in index)
+            {
+                Console.WriteLine(value);
+            }
 
             chronos.Stop();
             Console.WriteLine($"Copied into list in order {chronos.ElapsedMilliseconds}");
@@ -57,7 +61,7 @@ namespace OperationsConsole
             var allParallel = indexForParallel.GetAll();
 
             chronos.Stop();
-            Console.WriteLine($"Enumerated in {chronos.ElapsedMilliseconds}");
+            Console.WriteLine($"Copied into list in order {chronos.ElapsedMilliseconds}");
 
 
             Console.WriteLine("Press any key...");
