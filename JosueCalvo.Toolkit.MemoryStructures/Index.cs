@@ -9,11 +9,11 @@ namespace JosueCalvo.Toolkit.MemoryStructures
     public class Index<T> : IEnumerable<KeyValuePair<string, T>>
     {
         List<int[]> _pages = new List<int[]>();
-        List<KeyValuePair<string, List<KeyValuePair<string, T>>>> _keys = new List<KeyValuePair<string, List<KeyValuePair<string, T>>>>();
+        KeySet<T> _keys = new KeySet<T>();
 
         public CharSet CharSet { get; private set; }
 
-        public int Count { get { return _keys.Count; } }
+        public int Count { get; private set; }
 
         public Index(CharSet charSet)
         {
@@ -24,16 +24,7 @@ namespace JosueCalvo.Toolkit.MemoryStructures
         public void AddKey(string key, T value)
         {
             var sortingKey = GetSortingKey(key);
-            lock (_pages)
-            {
-                var values = AddKeyToPages(sortingKey);
-                values.Add(new KeyValuePair<string, T>(key, value));
-            }
-        }
-
-        List<KeyValuePair<string, T>> AddKeyToPages(string key)
-        {
-            List<KeyValuePair<string, T>> output = null;
+            Count++;
 
             var pageKey = key + CharSet.KeyFinisher;
             var page = 0;
@@ -43,9 +34,7 @@ namespace JosueCalvo.Toolkit.MemoryStructures
 
                 if (_pages[page][pagePosition] == 0)
                 {
-                    output = new List<KeyValuePair<string, T>>();
-                    _keys.Add(new KeyValuePair<string, List<KeyValuePair<string, T>>>(key, output));
-                    _pages[page][pagePosition] = _keys.Count * -1;
+                    _pages[page][pagePosition] = (_keys.AddValue(sortingKey, key, value) * -1) - 1;
                     break;
                 }
                 else if (_pages[page][pagePosition] > 0)
@@ -54,27 +43,23 @@ namespace JosueCalvo.Toolkit.MemoryStructures
                 }
                 else
                 {
-                    var keyValuesPair = _keys[(_pages[page][pagePosition] * -1) - 1];
-                    if (keyValuesPair.Key == key)
+                    var keysPointer = (_pages[page][pagePosition] * -1) - 1;
+                    if (_keys.GetSortingKey(keysPointer) == sortingKey)
                     {
-                        output = keyValuesPair.Value;
+                        _keys.AppendValue(keysPointer, key, value);
                         break;
                     }
                     else
                     {
-                        output = BranchKey(key, i, keyValuesPair.Key, _pages[page][pagePosition], page);
+                        BranchKey(sortingKey, key, i, _keys.GetSortingKey(keysPointer), _pages[page][pagePosition], page, value);
                         break;
                     }
                 }
             }
-
-            return output;
         }
 
-        List<KeyValuePair<string, T>> BranchKey(string key, int startingCharNumber, string foundKey, int foundPointer, int page)
+        void BranchKey(string sortingKey, string key, int startingCharNumber, string foundKey, int foundPointer, int page, T value)
         {
-            var output = new List<KeyValuePair<string, T>>();
-
             var pageKey = key + CharSet.KeyFinisher;
             var foundPageKey = foundKey + CharSet.KeyFinisher;
 
@@ -96,16 +81,14 @@ namespace JosueCalvo.Toolkit.MemoryStructures
                 else
                 {
                     pagePosition = GetPagePosition(pageKey.Substring(i, 1));
-                    _keys.Add(new  KeyValuePair<string, List<KeyValuePair<string, T>>>(key, output));
-                    _pages[page][pagePosition] = _keys.Count * -1;
+
+                    _pages[page][pagePosition] = (_keys.AddValue(sortingKey, key, value) * -1) - 1;
 
                     pagePosition = GetPagePosition(foundPageKey.Substring(i, 1));
                     _pages[page][pagePosition] = foundPointer;
                     break;
                 }
             }
-
-            return output;
         }
 
         public List<KeyValuePair<string, T>> GetValues(string key)
@@ -128,12 +111,9 @@ namespace JosueCalvo.Toolkit.MemoryStructures
                 }
                 else
                 {
-                    var keyValuesPair = _keys[(_pages[page][pagePosition] * -1) - 1];
-                    if (keyValuesPair.Key == key)
-                    {
-                        output = keyValuesPair.Value;
-                        break;
-                    }
+                    var pointer = (_pages[page][pagePosition] * -1) - 1;
+                    output = _keys.GetValues(pointer);
+                    break;
                 }
             }
 
@@ -152,11 +132,8 @@ namespace JosueCalvo.Toolkit.MemoryStructures
                 }
                 else if (pointer < 0)
                 {
-                    var keyValuesPair = _keys[(pointer * -1) - 1];
-                    foreach (var value in keyValuesPair.Value)
-                    {
-                        output.Add(new KeyValuePair<string, T>(value.Key, value.Value));
-                    }
+                    var keyValuesPair = _keys.GetValues((pointer * -1) - 1);
+                    output.AddRange(keyValuesPair);
                 }
             }
 
@@ -181,10 +158,10 @@ namespace JosueCalvo.Toolkit.MemoryStructures
                 }
                 else if (pointer < 0)
                 {
-                    var keyValuesPair = _keys[(pointer * -1) - 1];
-                    foreach (var value in keyValuesPair.Value)
+                    var keyValuesPair = _keys.GetValues((pointer * -1) - 1);
+                    foreach (var pair in keyValuesPair)
                     {
-                        yield return new KeyValuePair<string, T>(value.Key, value.Value);
+                        yield return new KeyValuePair<string, T>(pair.Key, pair.Value);
                     }
                 }
             }
