@@ -9,34 +9,61 @@ namespace OperationsConsole
     {
         static void Main(string[] args)
         {
-            var index = new Index<string>(new CharSet());
-
             var chronos = new Stopwatch();
+
+            var list = new List<string>();
+
             chronos.Start();
 
             for (var i = 0; i < 1000000; i++)
             {
-                if (i != 0 && i % 100000 == 0)
-                    Console.WriteLine($"{i} in {chronos.ElapsedMilliseconds}");
-
-                index.AddKey(i.ToString(), $"Value{i}");
+                list.Add(i.ToString());
             }
-            chronos.Stop();
             Console.WriteLine($"Inserted in {chronos.ElapsedMilliseconds}");
+            list.Sort();
+            chronos.Stop();
+            Console.WriteLine($"Sorted in {chronos.ElapsedMilliseconds}");
 
-            var sortedDictionary = new SortedDictionary<string, string>();
             chronos.Reset();
+            var index = new Index<bool>(new CharSet());
+
+            chronos.Start();
+
+            for (var i = 0; i < 1000000; i++)
+            {
+                if (i != 0 && i % 100000 == 0)
+                    Console.WriteLine($"{i} in {chronos.ElapsedMilliseconds}");
+
+                index.AddKey(i.ToString(), false);
+            }
+            chronos.Stop();
+            Console.WriteLine($"Inserted in {chronos.ElapsedMilliseconds}");
+
+            chronos.Reset();
+            var sortedDictionary = new SortedDictionary<string, bool>();
+
             chronos.Start();
             for (var i = 0; i < 1000000; i++)
             {
                 if (i != 0 && i % 100000 == 0)
                     Console.WriteLine($"{i} in {chronos.ElapsedMilliseconds}");
 
-                sortedDictionary.Add(i.ToString(), $"Value{i}");
+                sortedDictionary.Add(i.ToString(), false);
             }
 
             chronos.Stop();
             Console.WriteLine($"Inserted in {chronos.ElapsedMilliseconds}");
+
+            string lastKey = null;
+            foreach (var item in index)
+            {
+                //Console.WriteLine(item.Key);
+                if (item.Key.CompareTo(lastKey) < 0)
+                {
+                    throw new Exception("The keys are not sorted!");
+                }
+                lastKey = item.Key;
+            }
 
             Console.WriteLine("Press any key...");
             Console.ReadKey();
