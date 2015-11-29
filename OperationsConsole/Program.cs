@@ -65,8 +65,8 @@ namespace OperationsConsole
                 lastKey = item.Key;
             }
 
-            Console.WriteLine("Press any key...");
-            Console.ReadKey();
+            //Console.WriteLine("Press any key...");
+            //Console.ReadKey();
         }
     }
 }
