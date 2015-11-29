@@ -171,10 +171,10 @@ namespace JosueCalvo.Toolkit.MemoryStructures
         {
             var keyChar = keyCharString[0];
 
-            if (CharSet.CharConvertion.Any())
+            if (CharSet.CharConversion.Any())
             {
                 char foundKeyChar;
-                if (CharSet.CharConvertion.TryGetValue(keyChar, out foundKeyChar))
+                if (CharSet.CharConversion.TryGetValue(keyChar, out foundKeyChar))
                 {
                     keyChar = foundKeyChar;
                 }
@@ -193,7 +193,7 @@ namespace JosueCalvo.Toolkit.MemoryStructures
         string GetSortingKey(string key)
         {
             key = key.ToLower();
-            if (!CharSet.CharConvertion.Any())
+            if (!CharSet.CharConversion.Any())
             {
                 return key;
             }
@@ -204,7 +204,7 @@ namespace JosueCalvo.Toolkit.MemoryStructures
                 foreach (char keyChar in key)
                 {
                     char foundKeyChar;
-                    if (CharSet.CharConvertion.TryGetValue(keyChar, out foundKeyChar))
+                    if (CharSet.CharConversion.TryGetValue(keyChar, out foundKeyChar))
                     {
                         sortingKey.Append(foundKeyChar);
                     }

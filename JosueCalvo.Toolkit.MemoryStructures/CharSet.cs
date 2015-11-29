@@ -10,7 +10,7 @@ namespace JosueCalvo.Toolkit.MemoryStructures
         public char UnknownChar { get; private set; }
         public char KeyFinisher { get { return '\n'; } }
 
-        public ReadOnlyDictionary<char, char> CharConvertion { get; }
+        public ReadOnlyDictionary<char, char> CharConversion { get; }
 
         public CharSet(string characterSortOrder, char unknownChar, Dictionary<char, char> charConversion)
         {
@@ -21,7 +21,7 @@ namespace JosueCalvo.Toolkit.MemoryStructures
 
             UnknownChar = unknownChar;
             CharacterSortOrder = KeyFinisher + characterSortOrder.Replace("\n", "");
-            CharConvertion = new ReadOnlyDictionary<char, char>(charConversion);
+            CharConversion = new ReadOnlyDictionary<char, char>(charConversion);
         }
 
         public CharSet(string characterSortOrder, char unknownChar) : this(characterSortOrder, unknownChar, new Dictionary<char, char>())
